@@ -6,7 +6,7 @@
 #include "ray.h"
 
 extern vec3 randomInUnitDisk();
-extern Rand myrandengine;
+extern Rand jyorandengine;
 
 class camera{
     public:

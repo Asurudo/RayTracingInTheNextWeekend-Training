@@ -2,12 +2,12 @@
 #define MATERIALH
 
 #include <iostream>
-#include "myrand.h"
+#include "jyorand.h"
 
 // 前向声明
 struct hit_record;
 extern vec3 randomInUnitSphere();
-extern Rand myrandengine;
+extern Rand jyorandengine;
 
 class material{
     public:
@@ -112,9 +112,10 @@ class dielectric: public material {
                 reflectProb = schlick(cosine, refIdx);
 
             // 将反射量看作概率，随机一下，如果落在概率内，则返回反射光线，否则返回折射光线
-            scattered = ((myrandengine.myRandGetReal<double>(0, 1) < reflectProb)
-            ? reflected
-            : refracted);
+            scattered =
+                ((jyorandengine.jyoRandGetReal<double>(0, 1) < reflectProb)
+                     ? reflected
+                     : refracted);
 
             return true;
         }

@@ -2,6 +2,7 @@
 #define HITABLELISTH
 
 #include "hitable.h"
+#include "sphere.h"
 #include <vector>
 
 class hitable_list

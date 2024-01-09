@@ -1,10 +1,10 @@
 /*
-		使用时先new一个对象：Rand myrandengine;
-		接着调用方法：myrandengine.myRandGetInteger<int>(0, 100); 
+		使用时先new一个对象：Rand jyorandengine;
+		接着调用方法：jyorandengine.jyoRandGetInteger<int>(0, 100); 
 */
 
-#ifndef MYRAND_H
-#define MYRAND_H
+#ifndef JYORAND_H
+#define JYORAND_H
 
 #include <iostream>
 #include <random>
@@ -49,7 +49,7 @@ class Rand
 		}
 		//均匀分布，[a,b]范围的整数 
 		template <typename T>
-		T myRandGetInteger(T a, T b)
+		T jyoRandGetInteger(T a, T b)
 		{
 			int type = typeChoose();
 			std::uniform_int_distribution<T> d(a, b);
@@ -57,14 +57,14 @@ class Rand
 		}
 		//均匀分布，[a,b]范围的实数 
 		template <typename T>
-		T myRandGetReal(T a, T b)
+		T jyoRandGetReal(T a, T b)
 		{
 			int type = typeChoose();
 			std::uniform_real_distribution<T> d(a, b);
 			return d(randEngineFunc[type]);
 		}
 		//p概率返回true 
-		bool myRandGetBool(double p = 0.5)
+		bool jyoRandGetBool(double p = 0.5)
 		{
 			int type = typeChoose();
 			std::bernoulli_distribution d(p);
@@ -72,7 +72,7 @@ class Rand
 		}
 		//均值m，标准差s的正态分布结果 
 		template <typename T>
-		T myRandGetNormal(T m = 0.0, T s = 1.0)
+		T jyoRandGetNormal(T m = 0.0, T s = 1.0)
 		{
 			int type = typeChoose();
 			std::normal_distribution<T> d(m,s);

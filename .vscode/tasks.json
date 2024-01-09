@@ -6,7 +6,8 @@
 			"label": "g++.exe build active file",
 			"command": "C:\\mingw64\\bin\\g++.exe",
 			"args": [
-				"-Wextra",
+				"-Wno-conversion",
+				"-Wno-conversion-copy",
 				"-fdiagnostics-color=always",
 				"-O3",
 				"${file}",
