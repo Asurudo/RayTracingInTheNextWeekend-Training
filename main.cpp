@@ -4,9 +4,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "hitablelist.h"
-#include "jyorand.h" 
 #include "camera.h"
+#include "hitablelist.h"
+#include "jyorand.h"
 #include "material.h"
 #include "sphere.h"
 
@@ -42,7 +42,7 @@ vec3 color(const ray& in, int depth) {
     ray scattered;
     // 材料的吸收度
     vec3 attenuation;
-    if (depth < 30 && rec.mat_ptr->scatter(in, rec, attenuation, scattered))
+    if (depth < 50 && rec.mat_ptr->scatter(in, rec, attenuation, scattered))
       return attenuation * color(scattered, depth + 1);
     else
       return vec3(0, 0, 0);
@@ -68,17 +68,18 @@ void buildWorld() {
       vec3 center(a + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1), 0.2,
                   b + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1));
       if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
-        if (choose_mat < 0.8)
-          list.emplace_back(
-              new sphere(center, 0.2,
-                         new lambertian(vec3(
-                             jyorandengine.jyoRandGetReal<double>(0, 1) *
-                                 jyorandengine.jyoRandGetReal<double>(0, 1),
-                             jyorandengine.jyoRandGetReal<double>(0, 1) *
-                                 jyorandengine.jyoRandGetReal<double>(0, 1),
-                             jyorandengine.jyoRandGetReal<double>(0, 1) *
-                                 jyorandengine.jyoRandGetReal<double>(0, 1)))));
-        else if (choose_mat < 0.95)
+        if (choose_mat < 0.8) {
+
+          list.emplace_back(new moving_sphere(
+              center, center + vec3(0, 0.5, 0), 0.0, 1.0, 0.2,
+              new lambertian(
+                  vec3(jyorandengine.jyoRandGetReal<double>(0, 1) *
+                           jyorandengine.jyoRandGetReal<double>(0, 1),
+                       jyorandengine.jyoRandGetReal<double>(0, 1) *
+                           jyorandengine.jyoRandGetReal<double>(0, 1),
+                       jyorandengine.jyoRandGetReal<double>(0, 1) *
+                           jyorandengine.jyoRandGetReal<double>(0, 1)))));
+        } else if (choose_mat < 0.95)
           list.emplace_back(new sphere(
               center, 0.2,
               new metal(
@@ -113,16 +114,16 @@ int main() {
   mout.open("output.PPM");
 
   // 画布的长
-  int nx = 500;
+  int nx = 1000;
   // 画布的宽
-  int ny = 250;
+  int ny = 500;
   // 画布某一点的采样数量
-  int ns = 100;
+  int ns = 50;
   mout << "P3\n" << nx << " " << ny << "\n255\n";
 
   buildWorld();
-  vec3 lookfrom(12, 2, 3), lookat(0, 0, 0);
-  camera cam(lookfrom, lookat, 20, double(nx) / double(ny), 0.0,
+  vec3 lookfrom(13, 2, 3), lookat(0, 0, 0);
+  camera cam(lookfrom, lookat, 20, double(nx) / double(ny), 0.0, 1.0, 0.0,
              0.7 * (lookfrom - lookat).length());
 
   for (int j = ny - 1; j >= 0; j--) {
