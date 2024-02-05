@@ -14,4 +14,4 @@
 
 [In One Weekend](http://in1weekend.blogspot.com/)
 
-[Ray Tracing in the next Weekend 阅读笔记](https://asurudo.top/s/uF3auEjD7)
+[Ray Tracing in the next Weekend 阅读笔记](https://asurudo.top/s/OVYH3PmRe)
