@@ -1,6 +1,7 @@
 #ifndef SPHEREH
 #define SPHEREH
 
+#include "aabb.h"
 #include "hitable.h"
 #include "material.h"
 
@@ -16,10 +17,19 @@ class sphere : public hitable {
       : mat_ptr(mptr), center(cen), radius(r) {}
   virtual bool hit(const ray& r, double tmin, double tmax,
                    hit_record& rec) const override;
+  virtual std::shared_ptr<aabb> getaabb() const override;
 };
+
+// 获得包围盒
+// 圆心加减半径即可获得包围盒边界坐标
+std::shared_ptr<aabb> sphere::getaabb() const {
+  return std::make_shared<aabb>(center - vec3(radius, radius, radius),
+                          center + vec3(radius, radius, radius));
+}
 
 bool sphere::hit(const ray& r, double tmin, double tmax,
                  hit_record& rec) const {
+  //std::cout << "hithithithithithithithithithithithithithit" << std::endl;
   vec3 oc = r.origin() - center;
   double a = dot(r.direction(), r.direction());
   double b = 2 * dot(oc, r.direction());
@@ -73,7 +83,18 @@ class moving_sphere : public sphere {
         radius(r) {}
   virtual bool hit(const ray& r, double tmin, double tmax,
                    hit_record& rec) const override;
+  virtual std::shared_ptr<aabb> getaabb() const override;
 };
+
+// 移动的球，以时间开始和时间结束的两个球分别做小包围盒，然后组建一个大的包围盒包住这两个小包围盒
+// 获得包围盒，包围盒每个维度都需要最小最大边界
+std::shared_ptr<aabb> moving_sphere::getaabb() const {
+  aabb box1 = aabb(center0 - vec3(radius, radius, radius),
+                   center0 + vec3(radius, radius, radius));
+  aabb box2 = aabb(center1 - vec3(radius, radius, radius),
+                   center1 + vec3(radius, radius, radius));
+  return std::make_shared<aabb>(box1, box2);
+}
 
 // 根据时间返回现在的圆心
 vec3 moving_sphere::center(double time) const {

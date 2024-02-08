@@ -7,8 +7,10 @@
 #include "camera.h"
 #include "hitablelist.h"
 #include "jyorand.h"
+#include "kuinkerm.h"
 #include "material.h"
 #include "sphere.h"
+#include "bvh.h"
 
 using namespace std;
 Rand jyorandengine;
@@ -37,7 +39,7 @@ vec3 randomInUnitDisk() {
 vec3 color(const ray& in, int depth) {
   hit_record rec;
   // 减少误差，-0.00001也可以是交点
-  if (world.hitanything(in, 0.001, DBL_MAX, rec)) {
+  if (world.hitanythingbvh(in, 0.001, DBL_MAX, rec)) {
     // 反射出来的光线
     ray scattered;
     // 材料的吸收度
@@ -57,10 +59,9 @@ vec3 color(const ray& in, int depth) {
   }
   exit(0);
 }
-
+std::vector<shared_ptr<hitable>> worldlist;
 void buildWorld() {
-  std::vector<sphere*> list;
-  list.emplace_back(
+  worldlist.emplace_back(
       new sphere(vec3(0, -1000, 0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
   for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
@@ -69,8 +70,7 @@ void buildWorld() {
                   b + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1));
       if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
         if (choose_mat < 0.8) {
-
-          list.emplace_back(new moving_sphere(
+          worldlist.emplace_back(new moving_sphere(
               center, center + vec3(0, 0.5, 0), 0.0, 1.0, 0.2,
               new lambertian(
                   vec3(jyorandengine.jyoRandGetReal<double>(0, 1) *
@@ -80,7 +80,7 @@ void buildWorld() {
                        jyorandengine.jyoRandGetReal<double>(0, 1) *
                            jyorandengine.jyoRandGetReal<double>(0, 1)))));
         } else if (choose_mat < 0.95)
-          list.emplace_back(new sphere(
+          worldlist.emplace_back(new sphere(
               center, 0.2,
               new metal(
                   vec3(0.5 *
@@ -95,18 +95,22 @@ void buildWorld() {
                   0.5 * jyorandengine.jyoRandGetReal<double>(0, 1) *
                       jyorandengine.jyoRandGetReal<double>(0, 1))));
         else
-          list.emplace_back(new sphere(center, 0.2, new dielectric(1.5)));
+          worldlist.emplace_back(new sphere(center, 0.2, new dielectric(1.5)));
       }
     }
   }
 
-  list.emplace_back(new sphere(vec3(0, 1, 0), 1, new dielectric(1.5)));
-  list.emplace_back(
+  worldlist.emplace_back(new sphere(vec3(0, 1, 0), 1, new dielectric(1.5)));
+  worldlist.emplace_back(
       new sphere(vec3(-4, 1, 0), 1, new lambertian(vec3(0.4, 0.2, 0.1))));
-  list.emplace_back(
+  worldlist.emplace_back(
       new sphere(vec3(4, 1, 0), 1, new metal(vec3(0.7, 0.6, 0.5), 0)));
 
-  world = hitable_list(list);
+  // 从世界列表中创建bvh树
+  shared_ptr<hitable> rootptr;
+  bvh_node(worldlist, rootptr);
+  world = hitable_list(rootptr);
+  // world = hitable_list(worldlist);
 }
 
 int main() {

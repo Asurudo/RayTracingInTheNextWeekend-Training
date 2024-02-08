@@ -5,6 +5,7 @@
 
 // 前向声明
 class material;
+class aabb;
 
 struct hit_record
 {
@@ -23,6 +24,8 @@ class hitable
     // 纯虚函数
     public:
         virtual bool hit(const ray& r, double tmin, double tmax, hit_record& rec) const = 0;
+        // 获得包围盒
+        virtual std::shared_ptr<aabb> getaabb() const = 0;
 };
 
 #endif

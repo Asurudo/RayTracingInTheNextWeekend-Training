@@ -45,7 +45,21 @@
         "iterator": "cpp",
         "numeric": "cpp",
         "random": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "bit": "cpp",
+        "charconv": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "list": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "rope": "cpp",
+        "format": "cpp",
+        "iomanip": "cpp",
+        "numbers": "cpp",
+        "span": "cpp",
+        "variant": "cpp",
+        "cassert": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
