@@ -4,13 +4,14 @@
 #include <fstream>
 #include <iostream>
 
+#include "bvh.h"
 #include "camera.h"
 #include "hitablelist.h"
 #include "jyorand.h"
 #include "kuinkerm.h"
 #include "material.h"
 #include "sphere.h"
-#include "bvh.h"
+#include "texture.h"
 
 using namespace std;
 Rand jyorandengine;
@@ -61,8 +62,12 @@ vec3 color(const ray& in, int depth) {
 }
 std::vector<shared_ptr<hitable>> worldlist;
 void buildWorld() {
+  texture* checkertextptr =
+      new checker_texture(new constant_texture(
+          vec3(0.2, 0.3, 0.1)), new constant_texture(vec3(0.9, 0.9, 0.9)));
   worldlist.emplace_back(
-      new sphere(vec3(0, -1000, 0), 1000, new lambertian(vec3(0.5, 0.5, 0.5))));
+      new sphere(vec3(0, -1000, 0), 1000,
+                 new lambertian(checkertextptr)));
   for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
       double choose_mat = jyorandengine.jyoRandGetReal<double>(0, 1);
@@ -72,13 +77,13 @@ void buildWorld() {
         if (choose_mat < 0.8) {
           worldlist.emplace_back(new moving_sphere(
               center, center + vec3(0, 0.5, 0), 0.0, 1.0, 0.2,
-              new lambertian(
+              new lambertian(new constant_texture(
                   vec3(jyorandengine.jyoRandGetReal<double>(0, 1) *
                            jyorandengine.jyoRandGetReal<double>(0, 1),
                        jyorandengine.jyoRandGetReal<double>(0, 1) *
                            jyorandengine.jyoRandGetReal<double>(0, 1),
                        jyorandengine.jyoRandGetReal<double>(0, 1) *
-                           jyorandengine.jyoRandGetReal<double>(0, 1)))));
+                           jyorandengine.jyoRandGetReal<double>(0, 1))))));
         } else if (choose_mat < 0.95)
           worldlist.emplace_back(new sphere(
               center, 0.2,
@@ -102,7 +107,8 @@ void buildWorld() {
 
   worldlist.emplace_back(new sphere(vec3(0, 1, 0), 1, new dielectric(1.5)));
   worldlist.emplace_back(
-      new sphere(vec3(-4, 1, 0), 1, new lambertian(vec3(0.4, 0.2, 0.1))));
+      new sphere(vec3(-4, 1, 0), 1,
+                 new lambertian(new constant_texture(vec3(0.4, 0.2, 0.1)))));
   worldlist.emplace_back(
       new sphere(vec3(4, 1, 0), 1, new metal(vec3(0.7, 0.6, 0.5), 0)));
 

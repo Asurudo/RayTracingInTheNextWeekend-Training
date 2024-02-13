@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "jyorand.h"
+#include "texture.h"
 
 // 前向声明
 struct hit_record;
@@ -12,10 +13,12 @@ extern Rand jyorandengine;
 
 class material {
  public:
-  // 对于各个颜色的反射率，介于[0,1]
+  // 材质指针
   vec3 albedo;
+  texture* textureptr;
   material() {}
   material(const vec3& a) : albedo(a) {}
+  material(texture* a) : textureptr(a) {}
   // 计算反射光线
   virtual ray reflect(const ray& r_in, const hit_record& rec) const = 0;
   virtual bool scatter(const ray& r_in, const hit_record& rec,
@@ -24,7 +27,7 @@ class material {
 
 class lambertian : public material {
  public:
-  lambertian(const vec3& a) : material(a) {}
+  lambertian(texture* a) : material(a) {}
   virtual ray reflect(const ray& r_in, const hit_record& rec) const override {
     vec3 target = rec.p - r_in.A + rec.normal + randomInUnitSphere();
     return ray(rec.p, unit_vector(target - (rec.p - r_in.A)), r_in.time());
@@ -32,7 +35,7 @@ class lambertian : public material {
   virtual bool scatter(const ray& r_in, const hit_record& rec,
                        vec3& attenuation, ray& scattered) const override {
     scattered = reflect(r_in, rec);
-    attenuation = albedo;
+    attenuation = textureptr->value(0, 0, rec.p);
     return true;
   }
 };
@@ -93,7 +96,8 @@ class dielectric : public material {
 
     bool returnValue;
     refracted = ((returnValue = (delta > 0))
-                     ? ray(rec.p, niOverNt * (uIn - n * dt) - n * sqrt(delta), r_in.time())
+                     ? ray(rec.p, niOverNt * (uIn - n * dt) - n * sqrt(delta),
+                           r_in.time())
                      : ray());
 
     return returnValue;
