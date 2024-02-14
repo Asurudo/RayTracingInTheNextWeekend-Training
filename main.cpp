@@ -12,6 +12,7 @@
 #include "material.h"
 #include "sphere.h"
 #include "texture.h"
+#include "perlin.h"
 
 using namespace std;
 Rand jyorandengine;
@@ -36,11 +37,11 @@ vec3 randomInUnitDisk() {
   return p;
 }
 
-// 颜色插值
+// 颜色着色
 vec3 color(const ray& in, int depth) {
   hit_record rec;
   // 减少误差，-0.00001也可以是交点
-  if (world.hitanythingbvh(in, 0.001, DBL_MAX, rec)) {
+  if (world.hitanything(in, 0.001, DBL_MAX, rec)) {
     // 反射出来的光线
     ray scattered;
     // 材料的吸收度
@@ -65,58 +66,61 @@ void buildWorld() {
   texture* checkertextptr =
       new checker_texture(new constant_texture(
           vec3(0.2, 0.3, 0.1)), new constant_texture(vec3(0.9, 0.9, 0.9)));
-  worldlist.emplace_back(
-      new sphere(vec3(0, -1000, 0), 1000,
-                 new lambertian(checkertextptr)));
-  for (int a = -11; a < 11; a++) {
-    for (int b = -11; b < 11; b++) {
-      double choose_mat = jyorandengine.jyoRandGetReal<double>(0, 1);
-      vec3 center(a + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1), 0.2,
-                  b + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1));
-      if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
-        if (choose_mat < 0.8) {
-          worldlist.emplace_back(new moving_sphere(
-              center, center + vec3(0, 0.5, 0), 0.0, 1.0, 0.2,
-              new lambertian(new constant_texture(
-                  vec3(jyorandengine.jyoRandGetReal<double>(0, 1) *
-                           jyorandengine.jyoRandGetReal<double>(0, 1),
-                       jyorandengine.jyoRandGetReal<double>(0, 1) *
-                           jyorandengine.jyoRandGetReal<double>(0, 1),
-                       jyorandengine.jyoRandGetReal<double>(0, 1) *
-                           jyorandengine.jyoRandGetReal<double>(0, 1))))));
-        } else if (choose_mat < 0.95)
-          worldlist.emplace_back(new sphere(
-              center, 0.2,
-              new metal(
-                  vec3(0.5 *
-                           (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
-                                    jyorandengine.jyoRandGetReal<double>(0, 1)),
-                       0.5 *
-                           (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
-                                    jyorandengine.jyoRandGetReal<double>(0, 1)),
-                       0.5 * (1 +
-                              jyorandengine.jyoRandGetReal<double>(0, 1) *
-                                  jyorandengine.jyoRandGetReal<double>(0, 1))),
-                  0.5 * jyorandengine.jyoRandGetReal<double>(0, 1) *
-                      jyorandengine.jyoRandGetReal<double>(0, 1))));
-        else
-          worldlist.emplace_back(new sphere(center, 0.2, new dielectric(1.5)));
-      }
-    }
-  }
+  
+  texture* noisetextptr = new noise_texture(5);
 
-  worldlist.emplace_back(new sphere(vec3(0, 1, 0), 1, new dielectric(1.5)));
   worldlist.emplace_back(
-      new sphere(vec3(-4, 1, 0), 1,
-                 new lambertian(new constant_texture(vec3(0.4, 0.2, 0.1)))));
+      new sphere(vec3(0, -1000, 0), 1000, new lambertian(noisetextptr)));
+  // for (int a = -11; a < 11; a++) {
+  //   for (int b = -11; b < 11; b++) {
+  //     double choose_mat = jyorandengine.jyoRandGetReal<double>(0, 1);
+  //     vec3 center(a + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1), 0.2,
+  //                 b + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1));
+  //     if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
+  //       if (choose_mat < 0.8) {
+  //         worldlist.emplace_back(new moving_sphere(
+  //             center, center + vec3(0, 0.5, 0), 0.0, 1.0, 0.2,
+  //             new lambertian(new constant_texture(
+  //                 vec3(jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                          jyorandengine.jyoRandGetReal<double>(0, 1),
+  //                      jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                          jyorandengine.jyoRandGetReal<double>(0, 1),
+  //                      jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                          jyorandengine.jyoRandGetReal<double>(0, 1))))));
+  //       } else if (choose_mat < 0.95)
+  //         worldlist.emplace_back(new sphere(
+  //             center, 0.2,
+  //             new metal(
+  //                 vec3(0.5 *
+  //                          (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                                   jyorandengine.jyoRandGetReal<double>(0, 1)),
+  //                      0.5 *
+  //                          (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                                   jyorandengine.jyoRandGetReal<double>(0, 1)),
+  //                      0.5 * (1 +
+  //                             jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                                 jyorandengine.jyoRandGetReal<double>(0, 1))),
+  //                 0.5 * jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                     jyorandengine.jyoRandGetReal<double>(0, 1))));
+  //       else
+  //         worldlist.emplace_back(new sphere(center, 0.2, new dielectric(1.5)));
+  //     }
+  //   }
+  // }
+
   worldlist.emplace_back(
-      new sphere(vec3(4, 1, 0), 1, new metal(vec3(0.7, 0.6, 0.5), 0)));
+      new sphere(vec3(0, 2, 0), 2, new lambertian(noisetextptr)));
+  // worldlist.emplace_back(
+  //     new sphere(vec3(-4, 1, 0), 1,
+  //                new lambertian(new constant_texture(vec3(0.4, 0.2, 0.1)))));
+  // worldlist.emplace_back(
+  //     new sphere(vec3(4, 1, 0), 1, new metal(vec3(0.7, 0.6, 0.5), 0)));
 
   // 从世界列表中创建bvh树
-  shared_ptr<hitable> rootptr;
-  bvh_node(worldlist, rootptr);
-  world = hitable_list(rootptr);
-  // world = hitable_list(worldlist);
+  // shared_ptr<hitable> rootptr;
+  // bvh_node(worldlist, rootptr);
+  // world = hitable_list(rootptr);
+  world = hitable_list(worldlist);
 }
 
 int main() {
@@ -124,9 +128,9 @@ int main() {
   mout.open("output.PPM");
 
   // 画布的长
-  int nx = 1000;
+  int nx = 600;
   // 画布的宽
-  int ny = 500;
+  int ny = 300;
   // 画布某一点的采样数量
   int ns = 50;
   mout << "P3\n" << nx << " " << ny << "\n255\n";
