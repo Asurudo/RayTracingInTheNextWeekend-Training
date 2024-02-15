@@ -8,6 +8,7 @@
 class sphere : public hitable {
  public:
   // 球体的球心和半径
+  static constexpr double pi = 3.141592653;
   vec3 center;
   double radius;
   // 材质信息指针
@@ -18,18 +19,26 @@ class sphere : public hitable {
   virtual bool hit(const ray& r, double tmin, double tmax,
                    hit_record& rec) const override;
   virtual std::shared_ptr<aabb> getaabb() const override;
+
+  // 获得球上某一点的uv坐标，但要求是映射过后的单位圆上的一点
+  void get_sphere_uv(const vec3& normal, double& u, double& v) const {
+    double phi = atan2(normal.z(), normal.x());
+    double theta = asin(normal.y());
+    u = 1 - (phi + pi) / (2 * pi);
+    v = (theta + pi / 2) / pi;
+  }
 };
 
 // 获得包围盒
 // 圆心加减半径即可获得包围盒边界坐标
 std::shared_ptr<aabb> sphere::getaabb() const {
   return std::make_shared<aabb>(center - vec3(radius, radius, radius),
-                          center + vec3(radius, radius, radius));
+                                center + vec3(radius, radius, radius));
 }
 
 bool sphere::hit(const ray& r, double tmin, double tmax,
                  hit_record& rec) const {
-  //std::cout << "hithithithithithithithithithithithithithit" << std::endl;
+  // std::cout << "hithithithithithithithithithithithithithit" << std::endl;
   vec3 oc = r.origin() - center;
   double a = dot(r.direction(), r.direction());
   double b = 2 * dot(oc, r.direction());
@@ -49,6 +58,7 @@ bool sphere::hit(const ray& r, double tmin, double tmax,
       // 两个向量相减得到法线：相机到球体上一点 减去 相机到球心
       rec.normal = unit_vector(rec.p - center);
       rec.mat_ptr = mat_ptr;
+      get_sphere_uv(rec.normal, rec.u, rec.v);
       return true;
     }
     if (t2 < tmax && t2 > tmin) {
@@ -57,6 +67,7 @@ bool sphere::hit(const ray& r, double tmin, double tmax,
       // 两个向量相减得到法线：相机到球体上一点 减去 相机到球心
       rec.normal = unit_vector(rec.p - center);
       rec.mat_ptr = mat_ptr;
+      get_sphere_uv(rec.normal, rec.u, rec.v);
       return true;
     }
   }
@@ -122,6 +133,7 @@ bool moving_sphere::hit(const ray& r, double tmin, double tmax,
       // 两个向量相减得到法线：相机到球体上一点 减去 相机到球心
       rec.normal = unit_vector(rec.p - center(r.time()));
       rec.mat_ptr = mat_ptr;
+      get_sphere_uv(rec.normal, rec.u, rec.v);
       return true;
     }
     if (t2 < tmax && t2 > tmin) {
@@ -130,6 +142,7 @@ bool moving_sphere::hit(const ray& r, double tmin, double tmax,
       // 两个向量相减得到法线：相机到球体上一点 减去 相机到球心
       rec.normal = unit_vector(rec.p - center(r.time()));
       rec.mat_ptr = mat_ptr;
+      get_sphere_uv(rec.normal, rec.u, rec.v);
       return true;
     }
   }

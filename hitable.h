@@ -15,6 +15,8 @@ struct hit_record
     vec3 p;
     // 视线与物体相交的点处的法线
     vec3 normal;
+    // uv贴图
+    double u, v;
     // 材质信息指针
     material* mat_ptr;
 };

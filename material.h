@@ -14,10 +14,8 @@ extern Rand jyorandengine;
 class material {
  public:
   // 材质指针
-  vec3 albedo;
   texture* textureptr;
   material() {}
-  material(const vec3& a) : albedo(a) {}
   material(texture* a) : textureptr(a) {}
   // 计算反射光线
   virtual ray reflect(const ray& r_in, const hit_record& rec) const = 0;
@@ -35,7 +33,7 @@ class lambertian : public material {
   virtual bool scatter(const ray& r_in, const hit_record& rec,
                        vec3& attenuation, ray& scattered) const override {
     scattered = reflect(r_in, rec);
-    attenuation = textureptr->value(0, 0, rec.p);
+    attenuation = textureptr->value(rec.u, rec.v, rec.p);
     return true;
   }
 };
@@ -45,7 +43,7 @@ class metal : public material {
   // 模糊镜面反射特有的模糊系数
   double fuzz;
   // 对于rgb各个分量的反射量以及模糊镜面反射的系数[0,1]
-  metal(const vec3& a, double f = 0.75) : material(a) {
+  metal(texture* a, double f = 0.75) : material(a) {
     if (f < 1)
       fuzz = f;
     else
@@ -62,7 +60,7 @@ class metal : public material {
   virtual bool scatter(const ray& r_in, const hit_record& rec,
                        vec3& attenuation, ray& scattered) const override {
     scattered = reflect(r_in, rec);
-    attenuation = albedo;
+    attenuation = textureptr->value(0, 0, rec.p);
     return true;
   }
 };

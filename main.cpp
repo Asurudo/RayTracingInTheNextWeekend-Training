@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #include "bvh.h"
 #include "camera.h"
@@ -10,9 +12,9 @@
 #include "jyorand.h"
 #include "kuinkerm.h"
 #include "material.h"
+#include "perlin.h"
 #include "sphere.h"
 #include "texture.h"
-#include "perlin.h"
 
 using namespace std;
 Rand jyorandengine;
@@ -64,13 +66,20 @@ vec3 color(const ray& in, int depth) {
 std::vector<shared_ptr<hitable>> worldlist;
 void buildWorld() {
   texture* checkertextptr =
-      new checker_texture(new constant_texture(
-          vec3(0.2, 0.3, 0.1)), new constant_texture(vec3(0.9, 0.9, 0.9)));
-  
+      new checker_texture(new constant_texture(vec3(0.2, 0.3, 0.1)),
+                          new constant_texture(vec3(0.9, 0.9, 0.9)));
+
+  texture* metaltexture = new constant_texture(
+      vec3(0.5 * (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
+                          jyorandengine.jyoRandGetReal<double>(0, 1)),
+           0.5 * (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
+                          jyorandengine.jyoRandGetReal<double>(0, 1)),
+           0.5 * (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
+                          jyorandengine.jyoRandGetReal<double>(0, 1))));
   texture* noisetextptr = new noise_texture(5);
 
-  worldlist.emplace_back(
-      new sphere(vec3(0, -1000, 0), 1000, new lambertian(noisetextptr)));
+  worldlist.emplace_back(new sphere(
+      vec3(0, -1000, 0), 1000, new dielectric(1.5)));
   // for (int a = -11; a < 11; a++) {
   //   for (int b = -11; b < 11; b++) {
   //     double choose_mat = jyorandengine.jyoRandGetReal<double>(0, 1);
@@ -90,31 +99,24 @@ void buildWorld() {
   //       } else if (choose_mat < 0.95)
   //         worldlist.emplace_back(new sphere(
   //             center, 0.2,
-  //             new metal(
-  //                 vec3(0.5 *
-  //                          (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
-  //                                   jyorandengine.jyoRandGetReal<double>(0, 1)),
-  //                      0.5 *
-  //                          (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
-  //                                   jyorandengine.jyoRandGetReal<double>(0, 1)),
-  //                      0.5 * (1 +
-  //                             jyorandengine.jyoRandGetReal<double>(0, 1) *
-  //                                 jyorandengine.jyoRandGetReal<double>(0, 1))),
-  //                 0.5 * jyorandengine.jyoRandGetReal<double>(0, 1) *
-  //                     jyorandengine.jyoRandGetReal<double>(0, 1))));
+  //             new metal(metaltexture,
+  //                       0.5 * jyorandengine.jyoRandGetReal<double>(0, 1) *
+  //                           jyorandengine.jyoRandGetReal<double>(0, 1))));
   //       else
   //         worldlist.emplace_back(new sphere(center, 0.2, new dielectric(1.5)));
   //     }
   //   }
   // }
-
+  
+  int nx, ny, nn;
+  unsigned char* tex_data = stbi_load("jyo.png", &nx, &ny, &nn, 0);
   worldlist.emplace_back(
-      new sphere(vec3(0, 2, 0), 2, new lambertian(noisetextptr)));
+      new sphere(vec3(0, 2, 0), 2, new lambertian(new image_texture(tex_data, nx, ny))));
   // worldlist.emplace_back(
   //     new sphere(vec3(-4, 1, 0), 1,
   //                new lambertian(new constant_texture(vec3(0.4, 0.2, 0.1)))));
   // worldlist.emplace_back(
-  //     new sphere(vec3(4, 1, 0), 1, new metal(vec3(0.7, 0.6, 0.5), 0)));
+  //     new sphere(vec3(4, 1, 0), 1, new metal(metaltexture, 0)));
 
   // 从世界列表中创建bvh树
   // shared_ptr<hitable> rootptr;

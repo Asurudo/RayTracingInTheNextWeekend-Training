@@ -11,7 +11,7 @@ class texture {
   virtual vec3 value(double u, double v, const vec3& p) const = 0;
 };
 
-// 无论uv，无论交点的颜色恒定的颜色材质
+// 无论uv，无论交点的颜色恒定的颜色纹理
 class constant_texture : public texture {
  private:
   vec3 color;
@@ -19,11 +19,11 @@ class constant_texture : public texture {
  public:
   constant_texture() {}
   constant_texture(vec3 c) : color(c) {}
-  // 返回输入的RGB反射信息，也就是这个球的颜色恒定
+  // 返回输入的RGB反射信息，也就是这个球的纹理反射恒定
   virtual vec3 value(double u, double v, const vec3& p) const { return color; }
 };
 
-// 格子状的检测材质
+// 格子状的检测纹理
 class checker_texture : public texture {
  private:
   texture *odd, *even;
@@ -41,7 +41,7 @@ class checker_texture : public texture {
   }
 };
 
-// perlin噪声材质
+// perlin噪声纹理
 class noise_texture : public texture {
  private:
   perlin noise;
@@ -71,6 +71,34 @@ class noise_texture : public texture {
     // return vec3(1, 1, 1) * turb(scale * p);
     // 大理石
     return vec3(1, 1, 1) * 0.5 * (1 + sin(scale * p.z() + 10 * turb(p)));
+  }
+};
+
+// 图片纹理
+class image_texture : public texture {
+ private:
+  unsigned char* data;
+  int nx, ny;
+
+ public:
+  image_texture() {}
+  image_texture(unsigned char* pixels, int nx, int ny)
+      : data(pixels), nx(nx), ny(ny) {}
+
+  virtual vec3 value(double u, double v, const vec3& p) const {
+    int i = u * nx;
+    int j = (1 - v) * ny - 0.001;
+
+    // i = (i < 0) ? 0 : i;
+    // j = (j < 0) ? 0 : j;
+    // i = (i > nx - 1) ? nx - 1 : i;
+    // j = (j > ny - 1) ? ny - 1 : j;
+
+    // 一维数组存储的图片信息，每个像素点有三个值，在如下对应位置
+    double r = int(data[3 * i + 3 * nx * j]) / 255.0;
+    double g = int(data[3 * i + 3 * nx * j + 1]) / 255.0;
+    double b = int(data[3 * i + 3 * nx * j + 2]) / 255.0;
+    return vec3(r, g, b);
   }
 };
 
