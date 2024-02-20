@@ -45,8 +45,8 @@ bool hitable_list::hitanythingbvh(const ray& r, double tmin, double tmax,
                                   hit_record& rec) const {
   hit_record tempRec;
   bool hitAnything = false;
-  
   // 直接射向根节点，递归程序会带着往左右子节点遍历
+  // 此处tmin和tmax没有意义，因为会计算包围盒的击中时间（在bvh的hit中保证）
   if (bvhroot->hit(r, tmin, tmax, tempRec)) {
     hitAnything = true;
     rec = tempRec;

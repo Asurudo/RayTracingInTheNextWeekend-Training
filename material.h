@@ -21,6 +21,10 @@ class material {
   virtual ray reflect(const ray& r_in, const hit_record& rec) const = 0;
   virtual bool scatter(const ray& r_in, const hit_record& rec,
                        vec3& attenuation, ray& scattered) const = 0;
+  virtual vec3 emitted(double u, double v, const vec3& p) const {
+    // 返回纯黑，表示不发光
+    return vec3(0, 0, 0);
+  }
 };
 
 class lambertian : public material {
@@ -132,6 +136,23 @@ class dielectric : public material {
                      : refracted);
 
     return true;
+  }
+};
+
+class diffuse_light : public material {
+ public:
+  diffuse_light(texture* a) : material(a) {}
+  virtual ray reflect(const ray& r_in, const hit_record& rec) const override {
+    return ray(vec3(0, 0, 0), vec3(39, 39, 39));
+    exit(0);
+  }
+  virtual bool scatter(const ray& r_in, const hit_record& rec,
+                       vec3& attenuation, ray& scattered) const override {
+    return false;
+  }
+  virtual vec3 emitted(double u, double v, const vec3& p) const override {
+    // 返回材质颜色
+    return textureptr->value(u, v, p);
   }
 };
 
