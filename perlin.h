@@ -1,6 +1,8 @@
 #ifndef PERLINH
 #define PERLINH
 
+#include "vec3.h"
+
 // 前向声明
 extern Rand jyorandengine;
 

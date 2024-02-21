@@ -4,7 +4,9 @@
 #include <iostream>
 
 #include "jyorand.h"
+#include "ray.h"
 #include "texture.h"
+#include "hitable.h"
 
 // 前向声明
 struct hit_record;

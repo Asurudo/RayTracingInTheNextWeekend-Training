@@ -8,8 +8,9 @@ class aabb : public hitable {
   // 包围盒的左右上下前后边界
  public:
   vec3 vec3L, vec3R;
-  aabb(){vec3L = vec3(39393939, 39393939, 39393939);
-    vec3R = vec3(-3939393, -39393939, -39393939);
+  aabb(){
+    vec3L = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+    vec3R = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
   }
 
   // 将两个小包围盒组建成更大的包围盒，左边界取两个边界的最小值，右边界取两个边界的最大值

@@ -3,15 +3,15 @@
 
 #include "material.h"
 
-class rectangle_plane : public hitable {
+class rectangle : public hitable {
  protected:
   double dimention_one0, dimention_one1, dimention_two0, dimention_two1,
       dimention_three;
   material* matptr;
 
  public:
-  rectangle_plane() {}
-  rectangle_plane(double dimention_one0, double dimention_one1,
+  rectangle() {}
+  rectangle(double dimention_one0, double dimention_one1,
                   double dimention_two0, double dimention_two1,
                   double dimention_three, material* matptr)
       : dimention_one0(dimention_one0),
@@ -26,12 +26,12 @@ class rectangle_plane : public hitable {
   virtual std::shared_ptr<aabb> getaabb() const;
 };
 
-class rectangle_plane_xy : public rectangle_plane {
+class rectangle_xy : public rectangle {
  public:
-  rectangle_plane_xy() {}
-  rectangle_plane_xy(double x0, double x1, double y0, double y1, double z,
+  rectangle_xy() {}
+  rectangle_xy(double x0, double x1, double y0, double y1, double z,
                      material* matptr)
-      : rectangle_plane(x0, x1, y0, y1, z, matptr){};
+      : rectangle(x0, x1, y0, y1, z, matptr){};
   std::shared_ptr<aabb> getaabb() const override {
     return std::make_shared<aabb>(
         vec3(dimention_one0, dimention_two0, dimention_three - 0.0001),
@@ -61,12 +61,12 @@ class rectangle_plane_xy : public rectangle_plane {
   }
 };
 
-class rectangle_plane_xz : public rectangle_plane {
+class rectangle_xz : public rectangle {
  public:
-  rectangle_plane_xz() {}
-  rectangle_plane_xz(double x0, double x1, double z0, double z1, double y,
+  rectangle_xz() {}
+  rectangle_xz(double x0, double x1, double z0, double z1, double y,
                      material* matptr)
-      : rectangle_plane(x0, x1, z0, z1, y, matptr){};
+      : rectangle(x0, x1, z0, z1, y, matptr){};
   std::shared_ptr<aabb> getaabb() const override {
     return std::make_shared<aabb>(
         vec3(dimention_one0, dimention_three - 0.0001, dimention_two0),
@@ -96,12 +96,12 @@ class rectangle_plane_xz : public rectangle_plane {
   }
 };
 
-class rectangle_plane_yz : public rectangle_plane {
+class rectangle_yz : public rectangle {
  public:
-  rectangle_plane_yz() {}
-  rectangle_plane_yz(double y0, double y1, double z0, double z1, double x,
+  rectangle_yz() {}
+  rectangle_yz(double y0, double y1, double z0, double z1, double x,
                      material* matptr)
-      : rectangle_plane(y0, y1, z0, z1, x, matptr){};
+      : rectangle(y0, y1, z0, z1, x, matptr){};
   std::shared_ptr<aabb> getaabb() const override {
     return std::make_shared<aabb>(
         vec3(dimention_three - 0.0001, dimention_one0, dimention_two0),

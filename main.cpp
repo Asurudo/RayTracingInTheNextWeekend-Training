@@ -4,6 +4,9 @@
 #include <fstream>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
+const double PI = 3.141592653;
+
+#include "box.h"
 #include "bvh.h"
 #include "camera.h"
 #include "hitablelist.h"
@@ -11,12 +14,14 @@
 #include "kuinkerm.h"
 #include "material.h"
 #include "perlin.h"
-#include "sphere.h"
 #include "rectangle.h"
+#include "sphere.h"
 #include "stb_image.h"
 #include "texture.h"
+#include "transformation.h"
 
 using namespace std;
+
 Rand jyorandengine;
 hitable_list world;
 
@@ -43,7 +48,7 @@ vec3 randomInUnitDisk() {
 vec3 color(const ray& in, int depth) {
   hit_record rec;
   // 减少误差，-0.00001也可以是交点
-  if (world.hitanything(in, 0.001, DBL_MAX, rec)) {
+  if (world.hitanythingbvh(in, 0.001, DBL_MAX, rec)) {
     // 反射出来的光线
     ray scattered;
     // 材料的吸收度
@@ -53,8 +58,7 @@ vec3 color(const ray& in, int depth) {
       return emitted + attenuation * color(scattered, depth + 1);
     else
       return emitted;
-  } else  
-  {
+  } else {
     return vec3(0, 0, 0);
     // 天空
     // // 将射线in单位化，让其长度为1
@@ -92,25 +96,35 @@ void buildWorld() {
   texture* imagetextureptr = new image_texture(tex_data, nx, ny);
 
   worldlist.emplace_back(
-      new rectangle_plane_yz(0, 555, 0, 555, 555, new lambertian(greenptr)));
+      new rectangle_yz(0, 555, 0, 555, 555, new lambertian(redptr)));
   worldlist.emplace_back(
-      new rectangle_plane_yz(0, 555, 0, 555, 0, new lambertian(redptr)));
+      new rectangle_yz(0, 555, 0, 555, 0, new lambertian(greenptr)));
+  worldlist.emplace_back(new rectangle_xz(213, 343, 227, 332, 554,
+                                          new diffuse_light(whitelightptr)));
   worldlist.emplace_back(
-      new rectangle_plane_xz(213, 343, 227, 332, 554, new diffuse_light(whitelightptr)));
+      new rectangle_xz(0, 555, 0, 555, 555, new lambertian(whiteptr)));
   worldlist.emplace_back(
-      new rectangle_plane_xz(0, 555, 0, 555, 555, new lambertian(whiteptr)));
+      new rectangle_xz(0, 555, 0, 555, 0, new lambertian(whiteptr)));
   worldlist.emplace_back(
-      new rectangle_plane_xz(0, 555, 0, 555, 0, new lambertian(whiteptr)));
+      new rectangle_xy(0, 555, 0, 555, 555, new lambertian(whiteptr)));
   worldlist.emplace_back(
-      new rectangle_plane_xy(0, 555, 0, 555, 555, new lambertian(whiteptr)));
-  
-  
+      new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165),
+                                         new lambertian(whiteptr)),
+                                 -18),
+                    vec3(130, 0, 65)));
+  worldlist.emplace_back(
+      new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165),
+                                         new lambertian(whiteptr)),
+                                 15),
+                    vec3(265, 0, 295)));
+
   // worldlist.emplace_back(
   //     new sphere(vec3(0, -1000, 0), 1000, new lambertian(noisetextptr)));
   // for (int a = -11; a < 11; a++) {
   //   for (int b = -11; b < 11; b++) {
   //     double choose_mat = jyorandengine.jyoRandGetReal<double>(0, 1);
-  //     vec3 center(a + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1), 0.2,
+  //     vec3 center(a + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1),
+  //     0.2,
   //                 b + 0.9 * jyorandengine.jyoRandGetReal<double>(0, 1));
   //     if ((center - vec3(4, 0.2, 0)).length() > 0.9) {
   //       if (choose_mat < 0.8) {
@@ -122,13 +136,16 @@ void buildWorld() {
   //                      jyorandengine.jyoRandGetReal<double>(0, 1) *
   //                          jyorandengine.jyoRandGetReal<double>(0, 1),
   //                      jyorandengine.jyoRandGetReal<double>(0, 1) *
-  //                          jyorandengine.jyoRandGetReal<double>(0, 1))))));
+  //                          jyorandengine.jyoRandGetReal<double>(0,
+  //                          1))))));
   //       } else if (choose_mat < 0.95)
   //         worldlist.emplace_back(new sphere(
   //             center, 0.2,
   //             new metal(metaltexture,
-  //                       0.5 * jyorandengine.jyoRandGetReal<double>(0, 1) *
-  //                           jyorandengine.jyoRandGetReal<double>(0, 1))));
+  //                       0.5 * jyorandengine.jyoRandGetReal<double>(0, 1)
+  //                       *
+  //                           jyorandengine.jyoRandGetReal<double>(0,
+  //                           1))));
   //       else
   //         worldlist.emplace_back(new sphere(center, 0.2, new
   //         dielectric(1.5)));
@@ -139,18 +156,20 @@ void buildWorld() {
   // worldlist.emplace_back(
   //     new sphere(vec3(0, 2, 0), 2, new lambertian(noisetextptr)));
   // worldlist.emplace_back(
-  //     new rectangle_plane_xy(3, 5, 1, 3, -2, new diffuse_light(constantextptr)));
+  //     new rectangle_plane_xy(3, 5, 1, 3, -2, new
+  //     diffuse_light(constantextptr)));
   // worldlist.emplace_back(
   //     new sphere(vec3(-4, 1, 0), 1,
-  //                new lambertian(new constant_texture(vec3(0.4, 0.2, 0.1)))));
+  //                new lambertian(new constant_texture(vec3(0.4, 0.2,
+  //                0.1)))));
   // worldlist.emplace_back(
   //     new sphere(vec3(4, 1, 0), 1, new metal(metaltexture, 0)));
 
   // 从世界列表中创建bvh树
-  // shared_ptr<hitable> rootptr;
-  // bvh_node(worldlist, rootptr);
-  // world = hitable_list(rootptr);
-  world = hitable_list(worldlist);
+  shared_ptr<hitable> rootptr;
+  bvh_node(worldlist, rootptr);
+  world = hitable_list(rootptr);
+  // world = hitable_list(worldlist);
 }
 
 int main() {
@@ -162,7 +181,7 @@ int main() {
   // 画布的宽
   int ny = 500;
   // 画布某一点的采样数量
-  int ns = 500;
+  int ns = 1000;
   mout << "P3\n" << nx << " " << ny << "\n255\n";
 
   buildWorld();

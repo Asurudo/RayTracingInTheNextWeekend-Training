@@ -1,8 +1,6 @@
 #ifndef CAEERAH
 #define CAMERAH
 
-#define PI 3.141592653
-
 #include "jyorand.h"
 #include "ray.h"
 
