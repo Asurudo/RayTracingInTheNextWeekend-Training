@@ -3,10 +3,10 @@
 
 #include <iostream>
 
+#include "hitable.h"
 #include "jyorand.h"
 #include "ray.h"
 #include "texture.h"
-#include "hitable.h"
 
 // 前向声明
 struct hit_record;
@@ -155,6 +155,24 @@ class diffuse_light : public material {
   virtual vec3 emitted(double u, double v, const vec3& p) const override {
     // 返回材质颜色
     return textureptr->value(u, v, p);
+  }
+};
+
+// 各向同性
+class isotropic : public material {
+ public:
+  isotropic(texture* a) : material(a) {}
+  virtual ray reflect(const ray& r_in, const hit_record& rec) const override {
+    return ray(vec3(0, 0, 0), vec3(39, 39, 39));
+    exit(0);
+  }
+  virtual bool scatter(const ray& r_in, const hit_record& rec,
+                       vec3& attenuation, ray& scattered) const override {
+    // 往任意方向反射光线
+    // 和粗糙磨砂表面的区别是，粗糙磨砂表面不会往物体内反射
+    scattered = ray(rec.p, randomInUnitSphere());
+    attenuation = textureptr->value(rec.u, rec.v, rec.p);
+    return true;
   }
 };
 

@@ -15,6 +15,7 @@ const double PI = 3.141592653;
 #include "material.h"
 #include "perlin.h"
 #include "rectangle.h"
+#include "smoke.h"
 #include "sphere.h"
 #include "stb_image.h"
 #include "texture.h"
@@ -48,7 +49,7 @@ vec3 randomInUnitDisk() {
 vec3 color(const ray& in, int depth) {
   hit_record rec;
   // 减少误差，-0.00001也可以是交点
-  if (world.hitanythingbvh(in, 0.001, DBL_MAX, rec)) {
+  if (world.hitanything(in, 0.001, DBL_MAX, rec)) {
     // 反射出来的光线
     ray scattered;
     // 材料的吸收度
@@ -72,8 +73,8 @@ vec3 color(const ray& in, int depth) {
 }
 std::vector<shared_ptr<hitable>> worldlist;
 void buildWorld() {
-  texture* whitelightptr = new constant_texture(vec3(50, 50, 50));
-
+  texture* whitelightptr = new constant_texture(vec3(8, 8, 8));
+  texture* mikuptr = new constant_texture(vec3(0.223, 0.773, 0.733));
   texture* redptr = new constant_texture(vec3(0.65, 0.05, 0.05));
   texture* whiteptr = new constant_texture(vec3(0.73, 0.73, 0.73));
   texture* greenptr = new constant_texture(vec3(0.12, 0.45, 0.15));
@@ -99,7 +100,7 @@ void buildWorld() {
       new rectangle_yz(0, 555, 0, 555, 555, new lambertian(redptr)));
   worldlist.emplace_back(
       new rectangle_yz(0, 555, 0, 555, 0, new lambertian(greenptr)));
-  worldlist.emplace_back(new rectangle_xz(213, 343, 227, 332, 554,
+  worldlist.emplace_back(new rectangle_xz(113, 443, 127, 432, 554,
                                           new diffuse_light(whitelightptr)));
   worldlist.emplace_back(
       new rectangle_xz(0, 555, 0, 555, 555, new lambertian(whiteptr)));
@@ -107,16 +108,18 @@ void buildWorld() {
       new rectangle_xz(0, 555, 0, 555, 0, new lambertian(whiteptr)));
   worldlist.emplace_back(
       new rectangle_xy(0, 555, 0, 555, 555, new lambertian(whiteptr)));
-  worldlist.emplace_back(
+  worldlist.emplace_back(new smoke(
       new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165),
                                          new lambertian(whiteptr)),
                                  -18),
-                    vec3(130, 0, 65)));
-  worldlist.emplace_back(
+                    vec3(130, 0, 65)),
+      0.01, mikuptr));
+  worldlist.emplace_back(new smoke(
       new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165),
                                          new lambertian(whiteptr)),
                                  15),
-                    vec3(265, 0, 295)));
+                    vec3(265, 0, 295)),
+      0.01, mikuptr));
 
   // worldlist.emplace_back(
   //     new sphere(vec3(0, -1000, 0), 1000, new lambertian(noisetextptr)));
@@ -166,10 +169,10 @@ void buildWorld() {
   //     new sphere(vec3(4, 1, 0), 1, new metal(metaltexture, 0)));
 
   // 从世界列表中创建bvh树
-  shared_ptr<hitable> rootptr;
-  bvh_node(worldlist, rootptr);
-  world = hitable_list(rootptr);
-  // world = hitable_list(worldlist);
+  // shared_ptr<hitable> rootptr;
+  // bvh_node(worldlist, rootptr);
+  // world = hitable_list(rootptr);
+  world = hitable_list(worldlist);
 }
 
 int main() {
@@ -181,7 +184,7 @@ int main() {
   // 画布的宽
   int ny = 500;
   // 画布某一点的采样数量
-  int ns = 1000;
+  int ns = 20000;
   mout << "P3\n" << nx << " " << ny << "\n255\n";
 
   buildWorld();
