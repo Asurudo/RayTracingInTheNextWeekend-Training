@@ -175,9 +175,31 @@ void buildWorld() {
   world = hitable_list(worldlist);
 }
 
+int getfileline() {
+  std::ifstream file("output.PPM");
+  // 判断文件是否打开成功
+  if (file.is_open()) {
+    int line_count = 0;
+    std::string line;
+    while (std::getline(file, line)) {
+      ++line_count;
+    }
+    return line_count;
+  } else
+    return -1;
+}
+
 int main() {
+  // 是否重新渲染
+  int startoveragain = 0;
+  
+  int curline = getfileline();
+  
   ofstream mout;
-  mout.open("output.PPM");
+  if(startoveragain)
+    mout.open("output.PPM");
+  else
+    mout.open("output.PPM", ios::app);
 
   // 画布的长
   int nx = 1000;
@@ -185,16 +207,33 @@ int main() {
   int ny = 500;
   // 画布某一点的采样数量
   int ns = 20000;
-  mout << "P3\n" << nx << " " << ny << "\n255\n";
 
   buildWorld();
   vec3 lookfrom(278, 278, -800), lookat(278, 278, 0);
   camera cam(lookfrom, lookat, 40, double(nx) / double(ny), 0.0, 10.0, 0.0,
              1.0);
-
-  for (int j = ny - 1; j >= 0; j--) {
+  
+  int pauseflag = 1;
+  int si, sj;
+  if(curline <= 3 || startoveragain){
+    mout << "P3\n" << nx << " " << ny << "\n255\n";
+    sj = ny-1, si = 0;
+  }
+  else if(curline == nx*ny+3){
+    system("pause");
+    return 0;
+  }
+  else{
+      curline -= 3;
+      sj = ny-1-curline/nx;
+      si = curline-nx*(curline/nx);
+  }
+  
+  for (int j = sj; j >= 0; j--) {
     cout << "loading..." << 100 * (1.0 - double(j) / double(ny)) << "%";
-    for (int i = 0; i < nx; i++) {
+    int starti = pauseflag ? si : 0;
+    pauseflag = 0;
+    for (int i = starti; i < nx; i++) {
       // 最终的颜色
       vec3 col(0, 0, 0);
       for (int k = 0; k < ns; k++) {
@@ -216,7 +255,9 @@ int main() {
       int ig = int(255.99 * col[1]);
       int ib = int(255.99 * col[2]);
       ir = min(255, ir), ig = min(255, ig), ib = min(255, ib);
-      mout << ir << " " << ig << " " << ib << "\n";
+      stringstream ss;
+      ss << ir << " " << ig << " " << ib << "\n";
+      mout << ss.str();
     }
     system("cls");
   }
