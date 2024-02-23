@@ -246,7 +246,7 @@ int main() {
   // 画布的宽
   int ny = 500;
   // 画布某一点的采样数量
-  int ns = 10000;
+  int ns = 5000;
 
   buildWorld();
   vec3 lookfrom(478, 278, -600), lookat(278, 278, 0);
