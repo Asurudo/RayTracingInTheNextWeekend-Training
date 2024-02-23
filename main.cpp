@@ -49,7 +49,7 @@ vec3 randomInUnitDisk() {
 vec3 color(const ray& in, int depth) {
   hit_record rec;
   // 减少误差，-0.00001也可以是交点
-  if (world.hitanything(in, 0.001, DBL_MAX, rec)) {
+  if (world.hitanythingbvh(in, 0.001, DBL_MAX, rec)) {
     // 反射出来的光线
     ray scattered;
     // 材料的吸收度
@@ -78,6 +78,7 @@ void buildWorld() {
   texture* redptr = new constant_texture(vec3(0.65, 0.05, 0.05));
   texture* whiteptr = new constant_texture(vec3(0.73, 0.73, 0.73));
   texture* greenptr = new constant_texture(vec3(0.12, 0.45, 0.15));
+  texture* groundtexptr = new constant_texture(vec3(0.48, 0.83, 0.53));
 
   texture* checkertextptr =
       new checker_texture(new constant_texture(vec3(0.2, 0.3, 0.1)),
@@ -90,36 +91,75 @@ void buildWorld() {
                           jyorandengine.jyoRandGetReal<double>(0, 1)),
            0.5 * (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
                           jyorandengine.jyoRandGetReal<double>(0, 1))));
-  texture* noisetextptr = new noise_texture(5);
+  texture* noisetextptr = new noise_texture(0.1);
 
   int nx, ny, nn;
-  unsigned char* tex_data = stbi_load("jyo.png", &nx, &ny, &nn, 0);
+  unsigned char* tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
   texture* imagetextureptr = new image_texture(tex_data, nx, ny);
 
-  worldlist.emplace_back(
-      new rectangle_yz(0, 555, 0, 555, 555, new lambertian(redptr)));
-  worldlist.emplace_back(
-      new rectangle_yz(0, 555, 0, 555, 0, new lambertian(greenptr)));
-  worldlist.emplace_back(new rectangle_xz(113, 443, 127, 432, 554,
+  // 地板
+  int nb = 20;
+  for (int i = 0; i < nb; i++)
+    for (int j = 0; j < nb; j++) {
+      double w = 100;
+      double x0 = -1000 + i * w;
+      double y0 = 0;
+      double z0 = -1000 + j * w;
+      double x1 = x0 + w;
+      double y1 = 100 * (jyorandengine.jyoRandGetReal<double>(0, 1) + 0.01);
+      double z1 = z0 + w;
+      worldlist.emplace_back(new box(vec3(x0, y0, z0), vec3(x1, y1, z1),
+                                     new lambertian(groundtexptr)));
+    }
+  // 灯
+  worldlist.emplace_back(new rectangle_xz(123, 423, 147, 412, 554,
                                           new diffuse_light(whitelightptr)));
+
+  // 运动的球
+  vec3 center(400, 400, 400);
+  worldlist.emplace_back(new moving_sphere(
+      center, center + vec3(30, 0, 0), 0, 1, 50,
+      new lambertian(new constant_texture(vec3(0.7, 0.3, 0.1)))));
+
+  // 玻璃球
   worldlist.emplace_back(
-      new rectangle_xz(0, 555, 0, 555, 555, new lambertian(whiteptr)));
+      new sphere(vec3(260, 150, 45), 50, new dielectric(1.5)));
+
+  // 金属球
   worldlist.emplace_back(
-      new rectangle_xz(0, 555, 0, 555, 0, new lambertian(whiteptr)));
+      new sphere(vec3(0, 150, 145), 50,
+                 new metal(new constant_texture(vec3(0.8, 0.8, 0.9)), 10.0)));
+
+  // 一个玻璃球与一团玻璃球形状的烟雾
+  hitable* glasssphereptr =
+      new sphere(vec3(360, 150, 145), 70, new dielectric(1.5));
+  worldlist.emplace_back(glasssphereptr);
+  worldlist.emplace_back(new smoke(glasssphereptr, 0.2,
+                                   new constant_texture(vec3(0.2, 0.4, 0.9))));
+
+  // 笼罩全图的战争迷雾
   worldlist.emplace_back(
-      new rectangle_xy(0, 555, 0, 555, 555, new lambertian(whiteptr)));
-  worldlist.emplace_back(new smoke(
-      new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 165, 165),
-                                         new lambertian(whiteptr)),
-                                 -18),
-                    vec3(130, 0, 65)),
-      0.01, mikuptr));
-  worldlist.emplace_back(new smoke(
-      new translate(new rotate_y(new box(vec3(0, 0, 0), vec3(165, 330, 165),
-                                         new lambertian(whiteptr)),
-                                 15),
-                    vec3(265, 0, 295)),
-      0.01, mikuptr));
+      new smoke(new sphere(vec3(0, 0, 0), 5000, new dielectric(1.5)), 0.0001,
+                new constant_texture(vec3(1.0, 1.0, 1.0))));
+
+  // 地球
+  worldlist.emplace_back(
+      new sphere(vec3(400, 200, 400), 100, new lambertian(imagetextureptr)));
+
+  // 大理石球
+  worldlist.emplace_back(
+      new sphere(vec3(220, 280, 300), 80, new lambertian(noisetextptr)));
+
+  int ns = 1000;
+  for (int j = 0; j < ns; j++)
+    worldlist.emplace_back(new translate(
+        new rotate_y(
+            new sphere(vec3(165 * jyorandengine.jyoRandGetReal<double>(0, 1),
+                            165 * jyorandengine.jyoRandGetReal<double>(0, 1),
+                            165 * jyorandengine.jyoRandGetReal<double>(0, 1)),
+                       10, new metal(mikuptr)),
+            15),
+        vec3(-100, 270, 395)));
 
   // worldlist.emplace_back(
   //     new sphere(vec3(0, -1000, 0), 1000, new lambertian(noisetextptr)));
@@ -169,10 +209,10 @@ void buildWorld() {
   //     new sphere(vec3(4, 1, 0), 1, new metal(metaltexture, 0)));
 
   // 从世界列表中创建bvh树
-  // shared_ptr<hitable> rootptr;
-  // bvh_node(worldlist, rootptr);
-  // world = hitable_list(rootptr);
-  world = hitable_list(worldlist);
+  shared_ptr<hitable> rootptr;
+  bvh_node(worldlist, rootptr);
+  world = hitable_list(rootptr);
+  // world = hitable_list(worldlist);
 }
 
 int getfileline() {
@@ -192,11 +232,11 @@ int getfileline() {
 int main() {
   // 是否重新渲染
   int startoveragain = 0;
-  
+
   int curline = getfileline();
-  
+
   ofstream mout;
-  if(startoveragain)
+  if (startoveragain)
     mout.open("output.PPM");
   else
     mout.open("output.PPM", ios::app);
@@ -206,29 +246,27 @@ int main() {
   // 画布的宽
   int ny = 500;
   // 画布某一点的采样数量
-  int ns = 20000;
+  int ns = 10000;
 
   buildWorld();
-  vec3 lookfrom(278, 278, -800), lookat(278, 278, 0);
+  vec3 lookfrom(478, 278, -600), lookat(278, 278, 0);
   camera cam(lookfrom, lookat, 40, double(nx) / double(ny), 0.0, 10.0, 0.0,
              1.0);
-  
+
   int pauseflag = 1;
   int si, sj;
-  if(curline <= 3 || startoveragain){
+  if (curline <= 3 || startoveragain) {
     mout << "P3\n" << nx << " " << ny << "\n255\n";
-    sj = ny-1, si = 0;
-  }
-  else if(curline == nx*ny+3){
+    sj = ny - 1, si = 0;
+  } else if (curline == nx * ny + 3) {
     system("pause");
     return 0;
+  } else {
+    curline -= 3;
+    sj = ny - 1 - curline / nx;
+    si = curline - nx * (curline / nx);
   }
-  else{
-      curline -= 3;
-      sj = ny-1-curline/nx;
-      si = curline-nx*(curline/nx);
-  }
-  
+
   for (int j = sj; j >= 0; j--) {
     cout << "loading..." << 100 * (1.0 - double(j) / double(ny)) << "%";
     int starti = pauseflag ? si : 0;
