@@ -62,13 +62,13 @@ class camera {
     // 以相机坐标为原点随机出来的点
     vec3 offset = randomPoint.x() * u + randomPoint.y() * v;
 
-    double randNum = jyorandengine.jyoRandGetNormal<double>(0.5, 0.093);
-    if (randNum < 0)
-      randNum = 0;
-    else if (randNum > 1)
-      randNum = 1;
-    double time = time0 + randNum * (time1 - time0);
-
+    double randNum = jyorandengine.jyoRandGetNormal<double>((time1-time0)/2.0, (time1-time0)/5);
+    if (randNum < time0)
+      randNum = time0;
+    else if (randNum > time1)
+      randNum = time1;
+    double time = randNum;
+    // std::cout << randNum << std::endl;
     // 一条从相机到视点的射线，也就是一条光线
     return ray(
         origin + offset,

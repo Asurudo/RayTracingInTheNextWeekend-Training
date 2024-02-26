@@ -70,7 +70,7 @@ class noise_texture : public texture {
     // 深纹近似大理石
     // return vec3(1, 1, 1) * turb(scale * p);
     // 大理石
-    return vec3(1, 1, 1) * 0.5 * (1 + sin(scale * p.z() + 10 * turb(p)));
+    return vec3(1, 1, 1) * 0.5 * (1 + sin(scale * p.z() + 10 * turb(scale * p)));
   }
 };
 

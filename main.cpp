@@ -57,8 +57,11 @@ vec3 color(const ray& in, int depth) {
     vec3 emitted = rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
     if (depth < 50 && rec.mat_ptr->scatter(in, rec, attenuation, scattered))
       return emitted + attenuation * color(scattered, depth + 1);
-    else
+    else {
+      // 直视光源则可以看到光源原本的颜色
+      if (!depth) emitted.make_unit_vector();
       return emitted;
+    }
   } else {
     return vec3(0, 0, 0);
     // 天空
@@ -73,7 +76,7 @@ vec3 color(const ray& in, int depth) {
 }
 std::vector<shared_ptr<hitable>> worldlist;
 void buildWorld() {
-  texture* whitelightptr = new constant_texture(vec3(8, 8, 8));
+  texture* mikulightptr = new constant_texture(vec3(0.223, 0.773, 0.733) * 15);
   texture* mikuptr = new constant_texture(vec3(0.223, 0.773, 0.733));
   texture* redptr = new constant_texture(vec3(0.65, 0.05, 0.05));
   texture* whiteptr = new constant_texture(vec3(0.73, 0.73, 0.73));
@@ -91,7 +94,7 @@ void buildWorld() {
                           jyorandengine.jyoRandGetReal<double>(0, 1)),
            0.5 * (1 + jyorandengine.jyoRandGetReal<double>(0, 1) *
                           jyorandengine.jyoRandGetReal<double>(0, 1))));
-  texture* noisetextptr = new noise_texture(0.1);
+  texture* noisetextptr = new noise_texture(0.01);
 
   int nx, ny, nn;
   unsigned char* tex_data = stbi_load("earthmap.jpg", &nx, &ny, &nn, 0);
@@ -113,12 +116,12 @@ void buildWorld() {
     }
   // 灯
   worldlist.emplace_back(new rectangle_xz(123, 423, 147, 412, 554,
-                                          new diffuse_light(whitelightptr)));
+                                          new diffuse_light(mikulightptr)));
 
   // 运动的球
-  vec3 center(400, 400, 400);
+  vec3 center(400, 400, 200);
   worldlist.emplace_back(new moving_sphere(
-      center, center + vec3(30, 0, 0), 0, 1, 50,
+      center, center + vec3(50, 0, 0), 0.0, 10.0, 50.0,
       new lambertian(new constant_texture(vec3(0.7, 0.3, 0.1)))));
 
   // 玻璃球
@@ -139,7 +142,7 @@ void buildWorld() {
 
   // 笼罩全图的战争迷雾
   worldlist.emplace_back(
-      new smoke(new sphere(vec3(0, 0, 0), 5000, new dielectric(1.5)), 0.0001,
+      new smoke(new sphere(vec3(0, 0, 0), 5000, new dielectric(1.5)), 0.000005,
                 new constant_texture(vec3(1.0, 1.0, 1.0))));
 
   // 地球
@@ -150,6 +153,7 @@ void buildWorld() {
   worldlist.emplace_back(
       new sphere(vec3(220, 280, 300), 80, new lambertian(noisetextptr)));
 
+  // 金属小球组成的立方体
   int ns = 1000;
   for (int j = 0; j < ns; j++)
     worldlist.emplace_back(new translate(
@@ -157,7 +161,7 @@ void buildWorld() {
             new sphere(vec3(165 * jyorandengine.jyoRandGetReal<double>(0, 1),
                             165 * jyorandengine.jyoRandGetReal<double>(0, 1),
                             165 * jyorandengine.jyoRandGetReal<double>(0, 1)),
-                       10, new metal(mikuptr)),
+                       10, new metal(whiteptr)),
             15),
         vec3(-100, 270, 395)));
 
@@ -267,6 +271,9 @@ int main() {
     si = curline - nx * (curline / nx);
   }
 
+  //-----------------------------------------------------------------------
+  int sqrtns = int(sqrt(ns));
+  double resqrtns = 1.0 / sqrtns;
   for (int j = sj; j >= 0; j--) {
     cout << "loading..." << 100 * (1.0 - double(j) / double(ny)) << "%";
     int starti = pauseflag ? si : 0;
@@ -274,17 +281,20 @@ int main() {
     for (int i = starti; i < nx; i++) {
       // 最终的颜色
       vec3 col(0, 0, 0);
-      for (int k = 0; k < ns; k++) {
-        // 点(u,v)是点(i,j)的反离散化
-        double u = double(i + jyorandengine.jyoRandGetReal<double>(-1, 1)) /
-                   double(nx);
-        double v = double(j + jyorandengine.jyoRandGetReal<double>(-1, 1)) /
-                   double(ny);
+      for (int dj = 0; dj < sqrtns; dj++)
+        for (int di = 0; di < sqrtns; di++) {
+          // 蒙特卡洛-抖动采样，将像素划分成更密的小格子，每个格子里随机取一个点采样
+          // double uplus = -0.5 + resqrtns * ((double)di + jyorandengine.jyoRandGetReal<double>(-1, 1)); 
+          // double vplus = -0.5 + resqrtns * ((double)dj + jyorandengine.jyoRandGetReal<double>(-1, 1));
 
-        // 一条射向画布上点(u,v)的光线，注意(u,v)不是真实坐标而是在画布上的比例位置
-        ray r = cam.get_ray(u, v);
-        col += color(r, 0);
-      }
+          // 点(u,v)是点(i,j)的反离散化
+          double u = (double(i) + uplus) / double(nx);
+          double v = (double(j) + vplus) / double(ny);
+
+          // 一条射向画布上点(u,v)的光线，注意(u,v)不是真实坐标而是在画布上的比例位置
+          ray r = cam.get_ray(u, v);
+          col += color(r, 0);
+        }
       // 取颜色的平均值
       col /= double(ns);
       // gamma2修正，提升画面的质量
@@ -292,13 +302,49 @@ int main() {
       int ir = int(255.99 * col[0]);
       int ig = int(255.99 * col[1]);
       int ib = int(255.99 * col[2]);
-      ir = min(255, ir), ig = min(255, ig), ib = min(255, ib);
+      ir = min(ir, 255), ig = min(ig, 255), ib = min(ib, 255);
       stringstream ss;
       ss << ir << " " << ig << " " << ib << "\n";
       mout << ss.str();
     }
     system("cls");
   }
+
+  //-----------------------------------------------------------------------
+
+  // for (int j = sj; j >= 0; j--) {
+  //   cout << "loading..." << 100 * (1.0 - double(j) / double(ny)) << "%";
+  //   int starti = pauseflag ? si : 0;
+  //   pauseflag = 0;
+  //   for (int i = starti; i < nx; i++) {
+  //     // 最终的颜色
+  //     vec3 col(0, 0, 0);
+  //     for (int k = 0; k < ns; k++) {
+  //       // 点(u,v)是点(i,j)的反离散化
+  //       double u = double(i + jyorandengine.jyoRandGetReal<double>(-1, 1)) /
+  //                  double(nx);
+  //       double v = double(j + jyorandengine.jyoRandGetReal<double>(-1, 1)) /
+  //                  double(ny);
+
+  //       //
+  //       一条射向画布上点(u,v)的光线，注意(u,v)不是真实坐标而是在画布上的比例位置
+  //       ray r = cam.get_ray(u, v);
+  //       col += color(r, 0);
+  //     }
+  //     // 取颜色的平均值
+  //     col /= double(ns);
+  //     // gamma2修正，提升画面的质量
+  //     col = vec3(sqrt(col[0]), sqrt(col[1]), sqrt(col[2]));
+  //     int ir = int(255.99 * col[0]);
+  //     int ig = int(255.99 * col[1]);
+  //     int ib = int(255.99 * col[2]);
+  //     ir = min(ir, 255), ig = min(ig, 255), ib = min(ib, 255);
+  //     stringstream ss;
+  //     ss << ir << " " << ig << " " << ib << "\n";
+  //     mout << ss.str();
+  //   }
+  //   system("cls");
+  // }
 
   mout.close();
   system("pause");

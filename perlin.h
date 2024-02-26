@@ -81,7 +81,7 @@ std::vector<vec3> perlin::perlin_generate() {
 // 对每一个元素进行数组内元素随机交换
 void perlin::permute(std::vector<int>& v) {
   for (int i = v.size() - 1; i > 0; i--) {
-    int target = int(jyorandengine.jyoRandGetReal<double>(0, 1) * (i + 1));
+    int target = int(jyorandengine.jyoRandGetReal<double>(0, 1) * (double)(i + 1));
     std::swap(v[i], v[target]);
   }
 }
